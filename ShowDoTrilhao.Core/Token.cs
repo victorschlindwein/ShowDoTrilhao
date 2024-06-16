@@ -2,7 +2,7 @@
 {
     public class Token
     {
-        public string Hash { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
+        public string? Hash { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; } = DateTime.Now;
     }
 }

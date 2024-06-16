@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShowDoTrilhao", "ShowDoTrilhao\ShowDoTrilhao.csproj", "{18A0F75B-B708-480B-ACA6-D431D1C6E2DC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{627401E2-1112-4EA9-B18B-A6A9E3DA3D1E} = {627401E2-1112-4EA9-B18B-A6A9E3DA3D1E}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShowDoTrilhao.Client", "ShowDoTrilhao.Client\ShowDoTrilhao.Client.csproj", "{F527E763-9DA8-4B78-9BE5-6545BA035485}"
 	ProjectSection(ProjectDependencies) = postProject

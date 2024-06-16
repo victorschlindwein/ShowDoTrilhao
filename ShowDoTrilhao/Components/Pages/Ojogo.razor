@@ -1,64 +1,111 @@
-﻿@page "/ojogo"
+﻿@using ShowDoTrilhao.Core
+@using Newtonsoft.Json
+@using ShowDoTrilhao.Core.Enums
+@rendermode InteractiveServer
 @attribute [StreamRendering]
+
+@page "/ojogo"
 
 <PageTitle>O jogo</PageTitle>
 
 <h1>O jogo</h1>
 
-<p>Você perdeu.</p>
+<button class="btn btn-primary" @onclick="GetTriviaQuestions">Click me</button>
 
-@if (forecasts == null)
+@if (_token.Hash == null)
 {
     <p><em>Loading...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Temp. (C)</th>
-                <th>Temp. (F)</th>
-                <th>Summary</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var forecast in forecasts)
-            {
-                <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+} else {
+    <p role="status">@_token.CreatedAt : Clique para gerar seu token: @_token.Hash </p>
 
+    @for(var i = 0; i < 100;  i++)
+    {
+        <br/>
+    }
+    <p>Você perdeu.</p>
+}
 @code {
-    private WeatherForecast[]? forecasts;
+    static readonly HttpClient MyHttpClient = new();
+    static Token? _token;
+    private TriviaQuestions? _triviaQuestions;
 
     protected override async Task OnInitializedAsync()
     {
-        // Simulate asynchronous loading to demonstrate streaming rendering
-        await Task.Delay(500);
-
-        var startDate = DateOnly.FromDateTime(DateTime.Now);
-        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
-        forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
-        {
-            Date = startDate.AddDays(index),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = summaries[Random.Shared.Next(summaries.Length)]
-        }).ToArray();
+        _token = new Token();
+        _triviaQuestions = new TriviaQuestions();
     }
 
-    private class WeatherForecast
+    protected async Task CreateNewTriviaToken()
     {
-        public DateOnly Date { get; set; }
-        public int TemperatureC { get; set; }
-        public string? Summary { get; set; }
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        Console.WriteLine("Crianu o tokin");
+        const string urlTriviaToken = "https://tryvia.ptr.red/api_token.php?command=request";
+
+        try
+        {
+            var responseMessage = await MyHttpClient.GetAsync(urlTriviaToken);
+            var content = responseMessage.Content;
+            var message = await content.ReadAsStringAsync();
+            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(message);
+
+            if (apiResponse?.Token != null)
+            {
+                _token!.Hash = apiResponse?.Token;
+
+                Console.WriteLine("Token gerado com sucesso: " + _token.Hash);
+            }
+        }
+        catch
+        {
+            Console.WriteLine("F token");
+        }
     }
+
+    protected async Task GetTriviaQuestions()
+    {
+        await CreateNewTriviaToken();
+
+        Console.WriteLine("Clicou no butão");
+
+        QueryParametersDto queryParametersDto = new()
+        {
+            Amount = 1,
+            Category = TriviaCategoriesEn.Animals,
+            Difficulty = DifficultyEn.Easy,
+            Type = TypeEn.Multiple,
+            UserToken = _token
+        };
+
+        const string urlTriviaQuestionsApi = "https://tryvia.ptr.red/api.php";
+        var urlQuestions = $"{urlTriviaQuestionsApi}?amount={queryParametersDto.Amount}&category={(int)queryParametersDto.Category}&type={queryParametersDto.Type.ToString().ToLower()}&difficulty={queryParametersDto.Difficulty.ToString().ToLower()}&token={queryParametersDto.UserToken.Hash}";
+
+        try
+        {
+            var responseMessage = await MyHttpClient.GetAsync(urlQuestions);
+            var content = responseMessage.Content;
+            var message = await content.ReadAsStringAsync();
+            Console.WriteLine("Resposta full da api de perguntas:" + message);
+        }
+        catch
+        {
+            Console.WriteLine("F pergunta");
+        }
+
+    }
+
+    public class ApiResponse
+    {
+        public int? ResponseCode { get; set; }
+        public string? ResponseMessage { get; set; }
+        public string? Token { get; set; }
+    }
+
+    public class QueryParametersDto
+    {
+        public int? Amount { get; set; }
+        public TriviaCategoriesEn Category { get; set; }
+        public TypeEn Type { get; set; } = new();
+        public DifficultyEn Difficulty { get; set; } = new();
+        public Token? UserToken { get; set; } = new();
+    }
+
 }
